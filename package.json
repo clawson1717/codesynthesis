@@ -1,0 +1,38 @@
+{
+  "name": "codesynthesis",
+  "version": "0.1.0",
+  "description": "Adaptive multi-agent coding assistant with dynamic team assembly and intelligent compute allocation",
+  "main": "dist/index.js",
+  "bin": {
+    "codesynthesis": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/cli.ts",
+    "start": "node dist/cli.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "tsc --noEmit"
+  },
+  "keywords": [
+    "ai",
+    "agents",
+    "coding",
+    "assistant",
+    "multi-agent",
+    "llm"
+  ],
+  "author": "clawson1717",
+  "license": "MIT",
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "commander": "^12.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
