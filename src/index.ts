@@ -5,6 +5,23 @@
 
 import chalk from 'chalk';
 import { SynthesisOptions, SynthesisResult, Task, Agent, TokenUsage, VerificationStatus, ChecklistItem } from './types.js';
+import { 
+  getAllAgents, 
+  findAgentsBySpecialization, 
+  findAgentsByComplexity,
+  getRecommendedAgents,
+  calculateCapabilityMatch,
+  AGENT_REGISTRY 
+} from './agents.js';
+
+export { 
+  getAllAgents, 
+  findAgentsBySpecialization, 
+  findAgentsByComplexity,
+  getRecommendedAgents,
+  calculateCapabilityMatch,
+  AGENT_REGISTRY 
+};
 
 /**
  * Main synthesis function
@@ -78,33 +95,80 @@ async function analyzeTask(description: string): Promise<Task> {
 }
 
 /**
- * Assemble specialist agent team based on task needs
+ * Assemble specialist agent team based on task needs (DyTopo-style matching)
+ * 
+ * Uses semantic matching between task requirements and agent capabilities
+ * to form the optimal team for the task.
  */
 async function assembleTeam(task: Task): Promise<Agent[]> {
-  // Placeholder: DyTopo-style semantic matching would go here
-  const agents: Agent[] = [
-    {
-      id: 'architect-1',
-      name: 'System Architect',
-      specialization: ['design', 'architecture'],
-      capabilities: [],
-    },
-    {
-      id: 'implementer-1',
-      name: 'Senior Implementer',
-      specialization: ['coding', 'implementation'],
-      capabilities: [],
-    },
-  ];
+  const agents: Agent[] = [];
+  const addedAgentIds = new Set<string>();
 
-  // Add reviewer if complexity is high
-  if (task.complexity > 5) {
-    agents.push({
-      id: 'reviewer-1',
-      name: 'Code Reviewer',
-      specialization: ['review', 'quality'],
-      capabilities: [],
-    });
+  // Helper to add agent if not already added
+  const addAgent = (id: string) => {
+    if (!addedAgentIds.has(id) && AGENT_REGISTRY[id]) {
+      agents.push(AGENT_REGISTRY[id]);
+      addedAgentIds.add(id);
+    }
+  };
+
+  // Determine task type from description
+  const desc = task.description.toLowerCase();
+  
+  // Pattern matching for task types
+  if (/\b(api|endpoint|route|controller)\b/i.test(desc)) {
+    addAgent('architect');
+    addAgent('security');
+  }
+  
+  if (/\b(refactor|restructure|rewrite)\b/i.test(desc)) {
+    addAgent('implementer');
+    addAgent('reviewer');
+    addAgent('tester');
+  }
+  
+  if (/\b(test|spec|jest|vitest)\b/i.test(desc)) {
+    addAgent('tester');
+    addAgent('implementer');
+  }
+  
+  if (/\b(security|auth|login|password|token|vulnerability)\b/i.test(desc)) {
+    addAgent('security');
+    addAgent('reviewer');
+  }
+  
+  if (/\b(performance|optimize|slow|cache|memory)\b/i.test(desc)) {
+    addAgent('performance');
+    addAgent('implementer');
+  }
+  
+  if (/\b(documentation|doc|readme|comment)\b/i.test(desc)) {
+    addAgent('documentation');
+  }
+  
+  if (/\b(architecture|design|pattern|structure)\b/i.test(desc)) {
+    addAgent('architect');
+    addAgent('performance');
+  }
+
+  // Always add implementer as the primary executor
+  if (agents.length === 0 || !addedAgentIds.has('implementer')) {
+    addAgent('implementer');
+  }
+
+  // Add reviewer for medium+ complexity tasks
+  if (task.complexity > 4 && !addedAgentIds.has('reviewer')) {
+    addAgent('reviewer');
+  }
+
+  // Add tester for complex tasks or test-related tasks
+  if ((task.complexity > 5 || /\b(test|spec)\b/i.test(desc)) && !addedAgentIds.has('tester')) {
+    addAgent('tester');
+  }
+
+  // Add security for auth/data tasks or high complexity
+  if ((/\b(auth|user|data|input)\b/i.test(desc) || task.complexity > 7) && !addedAgentIds.has('security')) {
+    addAgent('security');
   }
 
   return agents;
